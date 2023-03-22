@@ -14,7 +14,7 @@ app.post("/", urlencodedParser, function (request, response) {
 });
 
    
-app.listen(3000, 'https://alexkir88.github.io/test-st-server/', (err)=> {
+app.listen(3000,  (err)=> {
    err? console.log(err) : console.log("Сервер запущен...")
 });
 
