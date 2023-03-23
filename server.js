@@ -10,7 +10,7 @@ const urlencodedParser = express.text();
 app.post("/", urlencodedParser, function (request, response) {
     if(!request.body) return response.sendStatus(400);
     response.setHeader('Access-Control-Allow-Origin', '*')
-
+    console.log('connect...' + request.body);
     postToFB(request.body).then(res => response.send(res)).catch(err => console.log(err));
 });
    
@@ -31,11 +31,12 @@ app.listen(3000,  (err)=> {
       }
     );
     const result = await response.json();
+    console.log('sand...' + result);
     const responseResult = await fetch(
       `https://test-sf-b38a8-default-rtdb.firebaseio.com/messages/${result.name}.json`
     );
     const respDB = await responseResult.json();
-
+    console.log('response...' + respDB);
     createRecords(message);
 
     return respDB
