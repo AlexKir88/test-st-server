@@ -10,7 +10,7 @@ app.post("/", urlencodedParser, function (request, response) {
     if(!request.body) return response.sendStatus(400);
     response.setHeader('Access-Control-Allow-Origin', '*')
 
-    postToFB(request.body).then(res => response.send(res));
+    postToFB(request.body).then(res => response.send(res)).catch(err => console.log(err));
 });
    
 app.listen(3000,  (err)=> {
