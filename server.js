@@ -1,5 +1,6 @@
 const express = require("express");
 const fetch = require("node-fetch");
+const pool = require("./db")
 const { initializeApp } = require('firebase/app');
 const { getDatabase, ref, set, onValue } = require( 'firebase/database');
 
@@ -16,6 +17,7 @@ app.use(function(req, res, next) {
    next();  // передаем обработку запроса методу app.post("/postuser"...
  });
 
+
   
 app.post("/", urlencodedParser, function (request, response) {
     if(!request.body || !request.body.name ) return response.sendStatus(400);
@@ -24,20 +26,19 @@ app.post("/", urlencodedParser, function (request, response) {
     postToFB(bodyStr).then(res => response.send(res)).catch(err => console.log(err));
 });
    
+
+
 app.get("/themes", urlencodedParserText, function (request, response) {
     console.log('sand themes on front...');
-    getThems().then(res => response.send(res)).catch(err => console.log(err));
+    pool.query('SELECT * FROM themes',(error, results) => {
+      response.send(results.rows);
+    })
 });
 
 app.listen(3000,  (err)=> {
    err? console.log(err) : console.log("Сервер запущен...")
 });
 
-//emulate table from relative DB 
-
-const getThems = async () => {
-  return ['Техподдержка', 'Продажи']
-}
 
 // Firebase
  const postToFB = async (message) => {
