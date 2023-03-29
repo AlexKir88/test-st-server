@@ -5,18 +5,39 @@ const { getDatabase, ref, set, onValue } = require( 'firebase/database');
 
 const app = express();
    
-const urlencodedParser = express.text();
+const urlencodedParserText = express.text();
+const urlencodedParser = express.json();
+
+
+app.use(function(req, res, next) {
+   res.header("Access-Control-Allow-Origin", "*");
+   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+   res.header("Access-Control-Allow-Methods", "GET, PATCH, PUT, POST, DELETE, OPTIONS");
+   next();  // передаем обработку запроса методу app.post("/postuser"...
+ });
+
   
 app.post("/", urlencodedParser, function (request, response) {
-    if(!request.body) return response.sendStatus(400);
-    response.setHeader('Access-Control-Allow-Origin', '*')
-    console.log('connect...' + request.body);
-    postToFB(request.body).then(res => response.send(res)).catch(err => console.log(err));
+    if(!request.body || !request.body.name ) return response.sendStatus(400);
+    console.log('connect...name ' + request.body.name);
+    let bodyStr = JSON.stringify(request.body)
+    postToFB(bodyStr).then(res => response.send(res)).catch(err => console.log(err));
 });
    
+app.get("/themes", urlencodedParserText, function (request, response) {
+    console.log('sand themes on front...');
+    getThems().then(res => response.send(res)).catch(err => console.log(err));
+});
+
 app.listen(3000,  (err)=> {
    err? console.log(err) : console.log("Сервер запущен...")
 });
+
+//emulate table from relative DB 
+
+const getThems = async () => {
+  return ['Техподдержка', 'Продажи']
+}
 
 // Firebase
  const postToFB = async (message) => {
@@ -31,12 +52,12 @@ app.listen(3000,  (err)=> {
       }
     );
     const result = await response.json();
-    console.log('sand...' + result);
+    console.log('get from DB...' + result.name);
     const responseResult = await fetch(
       `https://test-sf-b38a8-default-rtdb.firebaseio.com/messages/${result.name}.json`
     );
     const respDB = await responseResult.json();
-    console.log('response...' + respDB);
+    console.log('response from DB...name ' + respDB.name);
     createRecords(message);
 
     return respDB
@@ -46,6 +67,7 @@ app.listen(3000,  (err)=> {
 
    const createRecords = async (message) => {
     const objMessage = JSON.parse(message);
+    // const objMessage = message;
     const objContact = Object.assign(
       {},
       {
