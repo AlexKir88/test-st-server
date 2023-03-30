@@ -1,8 +1,6 @@
 const express = require("express");
 const fetch = require("node-fetch");
 const pool = require("./db")
-const { initializeApp } = require('firebase/app');
-const { getDatabase, ref, set, onValue } = require( 'firebase/database');
 
 const app = express();
    
@@ -24,9 +22,6 @@ app.post("/", urlencodedParser, function (request, response) {
     let messageObj = request.body;
     console.log('connect...name ' + messageObj.name);
 
-    // let bodyStr = JSON.stringify(request.body)
-
-    // postToFB(bodyStr).then(res => response.send(res)).catch(err => console.log(err));
     let str =`DO
         $do$
         BEGIN
