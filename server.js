@@ -21,12 +21,38 @@ app.use(function(req, res, next) {
   
 app.post("/", urlencodedParser, function (request, response) {
     if(!request.body || !request.body.name ) return response.sendStatus(400);
-    console.log('connect...name ' + request.body.name);
-    let bodyStr = JSON.stringify(request.body)
-    postToFB(bodyStr).then(res => response.send(res)).catch(err => console.log(err));
+    let messageObj = request.body;
+    console.log('connect...name ' + messageObj.name);
+
+    // let bodyStr = JSON.stringify(request.body)
+
+    // postToFB(bodyStr).then(res => response.send(res)).catch(err => console.log(err));
+    let str =`DO
+        $do$
+        BEGIN
+          IF NOT EXISTS (SELECT email FROM contacts WHERE email='${messageObj.email}' AND tel='${messageObj.tel}' ) THEN
+            INSERT INTO contacts (email, tel) VALUES ('${messageObj.email}', '${messageObj.tel}');
+          END IF;
+        END
+        $do$;
+        INSERT INTO messages (message, date, name, theme_id, contact_id) 
+        VALUES ('${messageObj.message}', '${messageObj.date}', '${messageObj.name}', 
+            (SELECT id FROM themes WHERE name='${messageObj.theme}'),
+            (SELECT id FROM contacts WHERE email='${messageObj.email}' AND tel='${messageObj.tel}' LIMIT 1))
+        RETURNING name, message, 
+        (SELECT name FROM themes WHERE id=theme_id) as theme,
+        (SELECT email FROM contacts WHERE id=contact_id) as email,
+        (SELECT tel FROM contacts WHERE id=contact_id) as tel;`;
+
+    pool.query(str ,(error, results) => {
+      console.log(str);
+      if (error) console.log(error);
+      console.log(results[1].rows[0]);
+      response.send(results[1].rows[0]);
+    })
+
 });
    
-
 
 app.get("/themes", urlencodedParserText, function (request, response) {
     console.log('sand themes on front...');
@@ -40,65 +66,8 @@ app.listen(3000,  (err)=> {
 });
 
 
-// Firebase
- const postToFB = async (message) => {
-    const response = await fetch(
-      'https://test-sf-b38a8-default-rtdb.firebaseio.com/messages.json',
-      {
-        method: 'POST',
-        body: message,
-        headers: {
-          'Content-type': 'application/json',
-        },
-      }
-    );
-    const result = await response.json();
-    console.log('get from DB...' + result.name);
-    const responseResult = await fetch(
-      `https://test-sf-b38a8-default-rtdb.firebaseio.com/messages/${result.name}.json`
-    );
-    const respDB = await responseResult.json();
-    console.log('response from DB...name ' + respDB.name);
-    createRecords(message);
-
-    return respDB
-  }
 
 
-
-   const createRecords = async (message) => {
-    const objMessage = JSON.parse(message);
-    // const objMessage = message;
-    const objContact = Object.assign(
-      {},
-      {
-        name: objMessage.name,
-        tel: objMessage.tel,
-        email: objMessage.email,
-      }
-    );
-    const firebaseConfig = {
-      databaseURL: 'https://test-sf-b38a8-default-rtdb.firebaseio.com',
-    };
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
-
-    createRecord(database, 'themes/', objMessage.theme, {
-      createAt: new Date().toLocaleString('ru'),
-    });
-    createRecord(database, 'contacts/', objMessage.idContact, objContact);
-  }
-
-
-
-  const createRecord = (db, group, key, jsonRecordStr) => {
-    const getRef = ref(db, group + key);
-    onValue(getRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) return;
-      set(ref(db, group + key), jsonRecordStr);
-    });
-  }
 
 
 
